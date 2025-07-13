@@ -1,0 +1,63 @@
+{
+  "name": "vidjoy-clone",
+  "version": "1.0.0",
+  "description": "Advanced video streaming platform with embed functionality",
+  "private": true,
+  "packageManager": "pnpm@8.15.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "clean": "rm -rf .next out",
+    "type-check": "tsc --noEmit",
+    "docker:dev": "docker-compose --profile dev up --build",
+    "docker:prod": "docker-compose up --build",
+    "audit": "pnpm audit",
+    "update": "pnpm update",
+    "check": "pnpm lint && pnpm type-check && pnpm audit",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.2.0",
+    "@mui/material": "^7.2.0",
+    "@types/hls.js": "^1.0.0",
+    "@types/node-fetch": "^2.6.12",
+    "axios": "^1.10.0",
+    "cheerio": "^1.1.0",
+    "clone-deep": "^4.0.1",
+    "framer-motion": "^10.18.0",
+    "hls.js": "^1.6.6",
+    "lucide-react": "^0.294.0",
+    "next": "^14.2.30",
+    "node-fetch": "^3.3.2",
+    "puppeteer": "^24.10.1",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.7"
+  },
+  "devDependencies": {
+    "@types/cheerio": "^1.0.0",
+    "@types/node": "^20.19.1",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "autoprefixer": "^10.4.17",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.30",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "pnpm": {
+    "overrides": {
+      "clone-deep": "^4.0.1"
+    }
+  }
+}
