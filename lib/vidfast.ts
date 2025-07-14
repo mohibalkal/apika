@@ -46,6 +46,8 @@ async function fetchVideoPage(url: string): Promise<string> {
         'Accept-Encoding': 'gzip, deflate, br',
         'Connection': 'keep-alive',
         'Upgrade-Insecure-Requests': '1',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
       },
       timeout: 30000,
     });
@@ -67,6 +69,10 @@ function extractVideoId(html: string): string | null {
     const urlMatch = html.match(/\/video\/([a-zA-Z0-9]+)/);
     if (urlMatch) return urlMatch[1];
     
+    // البحث عن معرف في data attributes
+    const dataMatch = html.match(/data-video-id=["']([^"']+)["']/);
+    if (dataMatch) return dataMatch[1];
+    
     return null;
   } catch (error) {
     console.error('Error extracting video ID:', error);
@@ -74,60 +80,65 @@ function extractVideoId(html: string): string | null {
   }
 }
 
-// دالة لجلب روابط الفيديو من API
-async function fetchVideoLinks(videoId: string): Promise<any> {
-  try {
-    // محاولة جلب الروابط من API مباشرة
-    const apiUrl = `https://vidfast.pro/api/video/${videoId}`;
-    const response = await axios.get(apiUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
-        'Referer': 'https://vidfast.pro/',
-      },
-      timeout: 30000,
-    });
-    
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching video links from API:', error);
-    throw new Error('Failed to fetch video links');
-  }
-}
-
-// دالة لتحليل روابط الفيديو
-function parseVideoSources(data: any): VideoSource[] {
+// دالة لاستخراج روابط الفيديو من HTML
+function extractVideoSourcesFromHTML(html: string, videoId: string): VideoSource[] {
   const sources: VideoSource[] = [];
   
   try {
-    // محاولة استخراج الروابط من البيانات
-    if (data.sources && Array.isArray(data.sources)) {
-      data.sources.forEach((source: any) => {
-        if (source.url && source.quality) {
+    // البحث عن روابط الفيديو في HTML
+    const videoUrlMatches = html.match(/https:\/\/hexawave3\.xyz\/file2\/[^"'\s]+/g);
+    
+    if (videoUrlMatches && videoUrlMatches.length > 0) {
+      // تجميع الروابط حسب الجودة
+      const qualityGroups = new Map<string, string[]>();
+      
+      videoUrlMatches.forEach(url => {
+        // تحديد الجودة من الرابط
+        let quality = '720p';
+        if (url.includes('/1080p/') || url.includes('/MTA4MA==/')) {
+          quality = '1080p';
+        } else if (url.includes('/480p/') || url.includes('/NDgw/')) {
+          quality = '480p';
+        } else if (url.includes('/360p/') || url.includes('/MzYw/')) {
+          quality = '360p';
+        }
+        
+        const group = qualityGroups.get(quality) || [];
+        group.push(url);
+        qualityGroups.set(quality, group);
+      });
+      
+      // إنشاء مصادر لكل جودة
+      qualityGroups.forEach((urls, quality) => {
+        // البحث عن قائمة التشغيل الرئيسية
+        const playlistUrl = urls.find(url => url.includes('.m3u8') || url.includes('playlist'));
+        const mainUrl = playlistUrl || urls[0];
+        
+        if (mainUrl) {
           sources.push({
             server: 'Alpha',
-            quality: source.quality,
-            url: source.url,
-            playlistUrl: source.url,
+            quality,
+            url: mainUrl,
+            playlistUrl: playlistUrl || mainUrl,
             segments: []
           });
         }
       });
     }
     
-    // إذا لم تكن هناك مصادر، إنشاء مصدر افتراضي
-    if (sources.length === 0 && data.url) {
+    // إذا لم نجد روابط، إنشاء مصدر افتراضي
+    if (sources.length === 0) {
       sources.push({
         server: 'Alpha',
         quality: '720p',
-        url: data.url,
-        playlistUrl: data.url,
+        url: `https://hexawave3.xyz/file2/${videoId}/720p/index.m3u8`,
+        playlistUrl: `https://hexawave3.xyz/file2/${videoId}/720p/index.m3u8`,
         segments: []
       });
     }
     
   } catch (error) {
-    console.error('Error parsing video sources:', error);
+    console.error('Error extracting video sources from HTML:', error);
   }
   
   return sources;
@@ -138,18 +149,21 @@ export async function extractMovieLinks(videoId: string): Promise<MovieLinksResu
   console.log(`[DEBUG] Starting movie extraction for ID: ${videoId}`);
   
   try {
+    // تنظيف معرف الفيديو (إزالة URL إذا كان موجوداً)
+    const cleanVideoId = videoId.includes('/') ? videoId.split('/').pop() || videoId : videoId;
+    console.log(`[DEBUG] Cleaned video ID: ${cleanVideoId}`);
+    
     // جلب صفحة الفيديو
-    const videoUrl = `https://vidfast.pro/movie/${videoId}`;
+    const videoUrl = `https://vidfast.pro/movie/${cleanVideoId}`;
+    console.log(`[DEBUG] Fetching from URL: ${videoUrl}`);
     const html = await fetchVideoPage(videoUrl);
     
-    // استخراج معرف الفيديو
-    const extractedVideoId = extractVideoId(html) || videoId;
+    // استخراج معرف الفيديو من الصفحة
+    const extractedVideoId = extractVideoId(html) || cleanVideoId;
+    console.log(`[DEBUG] Extracted video ID: ${extractedVideoId}`);
     
-    // جلب روابط الفيديو
-    const videoData = await fetchVideoLinks(extractedVideoId);
-    
-    // تحليل المصادر
-    const sources = parseVideoSources(videoData);
+    // استخراج روابط الفيديو من HTML
+    const sources = extractVideoSourcesFromHTML(html, extractedVideoId);
     
     console.log(`[DEBUG] Found ${sources.length} video sources`);
     
@@ -161,13 +175,16 @@ export async function extractMovieLinks(videoId: string): Promise<MovieLinksResu
   } catch (error) {
     console.error('[ERROR] Movie extraction failed:', error);
     
+    // تنظيف معرف الفيديو للاستخدام في المصدر التجريبي
+    const cleanVideoId = videoId.includes('/') ? videoId.split('/').pop() || videoId : videoId;
+    
     // إرجاع مصدر تجريبي في حالة الفشل
     return {
       sources: [{
         server: 'Alpha',
         quality: '720p',
-        url: `https://hexawave3.xyz/file2/${videoId}/720p/index.m3u8`,
-        playlistUrl: `https://hexawave3.xyz/file2/${videoId}/720p/index.m3u8`,
+        url: `https://hexawave3.xyz/file2/${cleanVideoId}/720p/index.m3u8`,
+        playlistUrl: `https://hexawave3.xyz/file2/${cleanVideoId}/720p/index.m3u8`,
         segments: []
       }],
       subtitles: []
@@ -180,18 +197,21 @@ export async function extractSeriesLinks(id: string, season: number, episode: nu
   console.log(`[DEBUG] Starting series extraction for ID: ${id}, Season: ${season}, Episode: ${episode}`);
   
   try {
+    // تنظيف معرف المسلسل (إزالة URL إذا كان موجوداً)
+    const cleanId = id.includes('/') ? id.split('/').pop() || id : id;
+    console.log(`[DEBUG] Cleaned series ID: ${cleanId}`);
+    
     // جلب صفحة المسلسل
-    const seriesUrl = `https://vidfast.pro/tv/${id}/${season}/${episode}`;
+    const seriesUrl = `https://vidfast.pro/tv/${cleanId}/${season}/${episode}`;
+    console.log(`[DEBUG] Fetching from URL: ${seriesUrl}`);
     const html = await fetchVideoPage(seriesUrl);
     
-    // استخراج معرف الفيديو
-    const extractedVideoId = extractVideoId(html) || `${id}_${season}_${episode}`;
+    // استخراج معرف الفيديو من الصفحة
+    const extractedVideoId = extractVideoId(html) || `${cleanId}_${season}_${episode}`;
+    console.log(`[DEBUG] Extracted video ID: ${extractedVideoId}`);
     
-    // جلب روابط الفيديو
-    const videoData = await fetchVideoLinks(extractedVideoId);
-    
-    // تحليل المصادر
-    const sources = parseVideoSources(videoData);
+    // استخراج روابط الفيديو من HTML
+    const sources = extractVideoSourcesFromHTML(html, extractedVideoId);
     
     console.log(`[DEBUG] Found ${sources.length} video sources for series`);
     
@@ -203,13 +223,16 @@ export async function extractSeriesLinks(id: string, season: number, episode: nu
   } catch (error) {
     console.error('[ERROR] Series extraction failed:', error);
     
+    // تنظيف معرف المسلسل للاستخدام في المصدر التجريبي
+    const cleanId = id.includes('/') ? id.split('/').pop() || id : id;
+    
     // إرجاع مصدر تجريبي في حالة الفشل
     return {
       sources: [{
         server: 'Alpha',
         quality: '720p',
-        url: `https://hexawave3.xyz/file2/${id}_${season}_${episode}/720p/index.m3u8`,
-        playlistUrl: `https://hexawave3.xyz/file2/${id}_${season}_${episode}/720p/index.m3u8`,
+        url: `https://hexawave3.xyz/file2/${cleanId}_${season}_${episode}/720p/index.m3u8`,
+        playlistUrl: `https://hexawave3.xyz/file2/${cleanId}_${season}_${episode}/720p/index.m3u8`,
         segments: []
       }],
       subtitles: []

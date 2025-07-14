@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
     const posterPath = tmdbData.poster_path;
     const backdropPath = tmdbData.backdrop_path;
     
-    const data = await extractMovieLinks(movieUrl);
+    const data = await extractMovieLinks(id);
     console.log(`Successfully extracted links for movie ${id}`);
 
     // إضافة معلومات الفيلم للرد
