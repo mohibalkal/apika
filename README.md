@@ -103,7 +103,7 @@ pnpm dev
 
 5. **Open your browser**
 ```
-http://localhost:3000
+https://apika.netlify.app
 ```
 
 ### Available Scripts
@@ -182,14 +182,14 @@ Recommended Git hooks and ignore patterns. See `.gitignore` for details.
 ### Embed Movies
 ```html
 <!-- Basic movie embed -->
-<iframe src="http://localhost:3000/embed/movie/786892" 
+<iframe src="https://apika.netlify.app/embed/movie/786892" 
         frameborder="0" 
         scrolling="no" 
         allowfullscreen>
 </iframe>
 
 <!-- With customization -->
-<iframe src="http://localhost:3000/embed/movie/786892?primary=6FAC8A&secondary=4ECDC4&icon=76F2B4&autoplay=true&title=true&adFree=true" 
+<iframe src="https://apika.netlify.app/embed/movie/786892?primary=6FAC8A&secondary=4ECDC4&icon=76F2B4&autoplay=true&title=true&adFree=true" 
         frameborder="0" 
         scrolling="no" 
         allowfullscreen>
@@ -199,14 +199,14 @@ Recommended Git hooks and ignore patterns. See `.gitignore` for details.
 ### Embed TV Shows
 ```html
 <!-- Basic TV show embed -->
-<iframe src="http://localhost:3000/embed/tv/94997/1/1" 
+<iframe src="https://apika.netlify.app/embed/tv/94997/1/1" 
         scrolling="no" 
         frameborder="0" 
         allowfullscreen>
 </iframe>
 
 <!-- With customization -->
-<iframe src="http://localhost:3000/embed/tv/94997/1/1?primary=FF6B6B&autoplay=true&next=true" 
+<iframe src="https://apika.netlify.app/embed/tv/94997/1/1?primary=FF6B6B&autoplay=true&next=true" 
         scrolling="no" 
         frameborder="0" 
         allowfullscreen>
@@ -216,14 +216,14 @@ Recommended Git hooks and ignore patterns. See `.gitignore` for details.
 ### Embed Anime
 ```html
 <!-- Basic anime embed -->
-<iframe src="http://localhost:3000/embed/anime/5/1/sub" 
+<iframe src="https://apika.netlify.app/embed/anime/5/1/sub" 
         scrolling="no" 
         frameborder="0" 
         allowfullscreen>
 </iframe>
 
 <!-- With fallback -->
-<iframe src="http://localhost:3000/embed/anime/5/1/sub?fallback=true" 
+<iframe src="https://apika.netlify.app/embed/anime/5/1/sub?fallback=true" 
         scrolling="no" 
         frameborder="0" 
         allowfullscreen>
@@ -247,14 +247,14 @@ Recommended Git hooks and ignore patterns. See `.gitignore` for details.
 ```javascript
 // Listen for watch progress updates
 window.addEventListener('message', (event) => {
-  if (event.origin === 'http://localhost:3000' && event.data.type === 'MEDIA_DATA') {
+  if (event.origin === 'https://apika.netlify.app' && event.data.type === 'MEDIA_DATA') {
     console.log('Watch progress updated:', event.data);
   }
 });
 
 // Listen for player events
 window.addEventListener('message', (event) => {
-  if (event.origin === 'http://localhost:3000' && event.data?.type === 'PLAYER_EVENT') {
+  if (event.origin === 'https://apika.netlify.app' && event.data?.type === 'PLAYER_EVENT') {
     const { event: eventType, currentTime, duration } = event.data.data;
     console.log(`Player ${eventType} at ${currentTime} of ${duration}s`);
   }

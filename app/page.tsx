@@ -97,11 +97,12 @@ interface VideoData {
 }
 
 export default function HomePage() {
-  const [origin, setOrigin] = useState("");
+  const [origin, setOrigin] = useState("https://apika.netlify.app");
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setOrigin(window.location.origin);
+      // Use production URL instead of localhost
+      setOrigin("https://apika.netlify.app");
     }
   }, []);
 
@@ -681,7 +682,7 @@ export default function HomePage() {
 }// دوال مساعدة
 function getEmbedUrl(type: string, id: string, season: string, episode: string) {
   if (!id) return "";
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''; // التحقق من وجود window
+  const baseUrl = "https://apika.netlify.app"; // Use production URL
   if (type === "movie") return `${baseUrl}/embed/movie/${id}`;
   if (type === "tv") return `${baseUrl}/embed/tv/${id}/${season || 1}/${episode || 1}`;
   return "";
